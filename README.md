@@ -2,7 +2,7 @@
 
 ## Concept
 
-![Alt text](///home/andrea/Documents/papers/IoTBC/assets/concept.jpg) 
+![Alt text](./assets/concept.jpg) 
 
 
 ## SOTA
