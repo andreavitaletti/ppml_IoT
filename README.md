@@ -11,8 +11,6 @@ Inspiring paper by Vitaly Shmatikov on [Privacy-Preserving Deep Learning](http:/
 
 [![Ciao](http://img.youtube.com/vi/hyDyOVFqm_U/0.jpg)](https://www.youtube.com/watch?v=hyDyOVFqm_U)
 
-== Very few citations!  ==
-
 
 [Efficient Algorithms for Public-Private Social Networks](http://dl.acm.org/citation.cfm?id=2783354) Efficient Algorithms for Public-Private Social Networks
 
