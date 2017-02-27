@@ -2,7 +2,7 @@
 
 ## Concept
 
-![Alt text](///home/andrea/Documents/papers/IoTBC/assets/concept.jpg) 
+![Alt text](./assets/concept.jpg) 
 
 
 ## SOTA
@@ -10,8 +10,6 @@
 Inspiring paper by Vitaly Shmatikov on [Privacy-Preserving Deep Learning](http://ieeexplore.ieee.org/document/7447103/)  
 
 [![Ciao](http://img.youtube.com/vi/hyDyOVFqm_U/0.jpg)](https://www.youtube.com/watch?v=hyDyOVFqm_U)
-
-== Very few citations!  ==
 
 
 [Efficient Algorithms for Public-Private Social Networks](http://dl.acm.org/citation.cfm?id=2783354) Efficient Algorithms for Public-Private Social Networks
