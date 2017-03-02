@@ -1,11 +1,28 @@
-#Privacy preserving and IoT
+#Privacy preserving IoT: on the value of data 
 
 ## Concept
+
+We do believe there is a big value in IoT data, in particular when such data are related to personal information (.e.g on health or user behaviours). Such value is often "hidden" and becomes clear only after some information retrival and/or data mining algorithm and/or machine learning algorithm runs on it. 
+
+Nowadays, the extraction of useful insights from personal data is demanded to trusted third parties (see picture below). To do that, our data has to leave our private domain, and consequently we loose their control. 
+
+We hope for a future, in which the data will always be under the control of their owner, that will be able to valorize them in the most convenient way.
+
+To support our vision, some technologies have to be developed and/or integrated and employed. 
+
+1. A technology to track data and their usage
+2. A technology to quantify the quality/value of the data
+3. A technology to valorize data 
+4. A technology to extract information from data in a privacy preserving way 
+
+Notice that, if we will be able to develop point 4 (see below for a preliminary SOTA) this will also help in point 2, at least in some contexts. As an example, let's assume to have a technology to build privacy preserving prediction models and let's assume that a user U participated to the creation of a model M with its data D. The accuracy of predictions based on M, on D and on new data, could be potentially used as a proxy to establish the value of D itself. As much is the prediction accuracy of M, as much is the quality of D and thus their potential value. 
+
+Finally observe that blockchain, seems to be an effective solution to handle at least some aspects of point 1 and 3. 
 
 ![Alt text](./assets/concept.jpg) 
 
 
-## SOTA
+## SOTA on technologies to extract information from data in a privacy preserving way 
 
 Inspiring paper by Vitaly Shmatikov on [Privacy-Preserving Deep Learning](http://ieeexplore.ieee.org/document/7447103/)  
 
