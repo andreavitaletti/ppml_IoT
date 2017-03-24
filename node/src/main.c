@@ -1,28 +1,51 @@
 #include "main.h"
 
-void Blink_Task(void * pvParameters);
 void SystemClock_Config(void);
 void HAL_RNG_MspInit(RNG_HandleTypeDef *hrng);
 void HAL_RNG_MspDeInit(RNG_HandleTypeDef *hrng);
 
-RNG_HandleTypeDef RNG_Handle;
+const uint8_t prnum[] = {0xD1, 0x6B, 0x6A, 0xE8, 0x27, 0xF1, 0x71, 0x75, 0xE0, 0x40, 0x87, 0x1A, 0x1C, 0x7E, 0xC3, 0x50, 0x01, 0x92, 0xC4, 0xC9, 0x26, 0x77, 0x33, 0x6E, 0xC2, 0x53, 0x7A, 0xCA, 0xEE, 0x00, 0x08, 0xE0};
 
-uint32_t genericCounter;
-EcdhContext EcdhContext_t;
-EcDomainParameters EcDomainParameters_t;
+error_t error;
+uint_t n;
+uint8_t digest[64];
+EcDomainParameters params;
+Mpi privateKey;
+EcPoint publicKey;
+EcdsaSignature signature;
+Mpi r;
 YarrowContext YarrowContext_t;
-EcdsaSignature EcdsaSignature_t;
+static uint8_t random[128];
 
-uint8_t seed[32];
-uint8_t signatureBuffer[256];
-uint8_t mpibuffer[128];
-uint32_t signatureLength;
+RNG_HandleTypeDef RNG_Handle;
+uint_t i; 	
 uint32_t value;
-uint32_t i;
-uint32_t returnCode;
+uint8_t seed[32];
+uint8_t buffer[64];
+uint8_t genericCounter = 0;
+	
+uint8_t message[128];
 
-const uint8_t InputMessage[] = {"This is a simple message"};
-uint8_t MessageDigest[SHA256_DIGEST_SIZE];
+extern uint16_t rxBufferIndex;
+extern uint8_t aRxBuffer[PRINTFDMA_RXBUFFERSIZE];
+
+void printMpi(const Mpi *a)
+{
+   uint_t i;
+
+   for(i = 0; i < a->size; i++)
+		if(a->data[a->size - 1 - i] != 0)
+      printf("%08X", a->data[a->size - 1 - i]);
+}
+
+void printArray(const void *data, size_t length)
+{
+   uint_t i;
+
+   for(i = 0; i < length; i++)
+		printf("%02X", *((uint8_t *) data + i));
+
+}
 
 /**
   * @brief  Main program
@@ -31,154 +54,123 @@ uint8_t MessageDigest[SHA256_DIGEST_SIZE];
   */
 int main(void)
 {  
-  /* STM32L4xx HAL library initialization:
-       - Configure the Flash prefetch
-       - Systick timer is configured by default as source of time base, but user 
-         can eventually implement his proper time base source (a general purpose 
-         timer for example or other time source), keeping in mind that Time base 
-         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
-         handled in milliseconds basis.
-       - Set NVIC Group Priority to 4
-       - Low Level Initialization
-     */
-  HAL_Init();  
-  
-  /* Configure the system clock = 80 MHz */
-  SystemClock_Config();
+		/* STM32L4xx HAL library initialization:
+				 - Configure the Flash prefetch
+				 - Systick timer is configured by default as source of time base, but user 
+					 can eventually implement his proper time base source (a general purpose 
+					 timer for example or other time source), keeping in mind that Time base 
+					 duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+					 handled in milliseconds basis.
+				 - Set NVIC Group Priority to 4
+				 - Low Level Initialization
+			 */
+		HAL_Init();  
+		
+		/* Configure the system clock = 80 MHz */
+		SystemClock_Config();
 
-	/* Init printf */
-	Printf_Init();
+		/* Init printf */
+		PrintfDmaInit();
+		
+		/* Init LED */
+		BSP_LED_Init(LED3);
+		BSP_LED_Off(LED3);
+		
+		/* Welcome message */
+		printf("STM32L432 Nucleo\r\nECDSA PhD\r\n\r\n");
+		
+		uint16_t rcvLength = 0;
+		while(rcvLength < 32)
+		{
+			rcvLength = PrintfDmaGetData(buffer);
+			HAL_Delay(100);
+		}
 	
-	/* Init LED */
-	BSP_LED_Init(LED3);
-	BSP_LED_Off(LED3);
-	
-	/* Welcome message */
-	printf("STM32L432 Nucleo\r\nCycloneCrypto test - ECDSA\r\n\r\n");
-	
-	/* Init counter */
-	genericCounter = 0;
-	
-	/* ECDSA */
-	//Enable RNG peripheral clock
-  __HAL_RCC_RNG_CLK_ENABLE();
-  //Initialize RNG
-  RNG_Handle.Instance = RNG;
-  HAL_RNG_Init(&RNG_Handle);
-	
-	returnCode = yarrowInit(&YarrowContext_t);
-	//printf("yarrowInit return code: %X\r\n", returnCode);
-	ecdhInit(&EcdhContext_t);
-	ecdsaInitSignature(&EcdsaSignature_t);
+		//Initialize EC domain parameters
+    ecInitDomainParameters(&params);
+		
+		//Initialize ECDSA private key
+		mpiInit(&privateKey);
+	 
+		//Enable RNG peripheral clock
+		__HAL_RCC_RNG_CLK_ENABLE();
+		//Initialize RNG
+		RNG_Handle.Instance = RNG;
+		HAL_RNG_Init(&RNG_Handle);
+		
+		//Generate a random seed
+		for(i = 0; i < 32; i += 4)
+		{
+			//Get 32-bit random value
+			HAL_RNG_GenerateRandomNumber(&RNG_Handle, &value);
 
-  //Generate a random seed
-  for(i = 0; i < 32; i += 4)
-  {
-		//Get 32-bit random value
-    HAL_RNG_GenerateRandomNumber(&RNG_Handle, &value);
+			//Copy random value
+			seed[i] = value & 0xFF;
+			seed[i + 1] = (value >> 8) & 0xFF;
+			seed[i + 2] = (value >> 16) & 0xFF;
+			seed[i + 3] = (value >> 24) & 0xFF;
+		}
+		
+		//PRNG initialization
+   error = yarrowInit(&YarrowContext_t);
+   //Any error to report?
+   if(error)
+   {
+      //Debug message
+      TRACE_ERROR("Failed to initialize PRNG!\r\n");
+   }
 
-    //Copy random value
-    seed[i] = value & 0xFF;
-    seed[i + 1] = (value >> 8) & 0xFF;
-    seed[i + 2] = (value >> 16) & 0xFF;
-    seed[i + 3] = (value >> 24) & 0xFF;
-  }
-	
-	// properly seed the PRNG
-  returnCode = yarrowSeed(&YarrowContext_t, seed, sizeof(seed));
-	//printf("yarrowSeed return code: %X\r\n", returnCode);
-	
-	// generate keypair
-	returnCode = ecLoadDomainParameters(&EcdhContext_t.params, &secp256k1Curve);
-	//printf("ecLoadDomainParameters return code: %X\r\n", returnCode);
-	
-	returnCode = ecdhGenerateKeyPair(&EcdhContext_t, &yarrowPrngAlgo, &YarrowContext_t);
-	//printf("ecdhGenerateKeyPair return code: %X\r\n", returnCode);
-	
-	/*
-	// print private key
-	printf("Private key: ");
-	mpiWriteRaw(&EcdhContext_t.da, mpibuffer, mpiGetLength(&EcdhContext_t.da));
-	for(i=0;i<mpiGetLength(&EcdhContext_t.da);i++)
-		printf("%02X", mpibuffer[i]);
-	printf("\r\n");
-	
-	// print public key
-	printf("Public key: ");
-	mpiWriteRaw(&EcdhContext_t.qa.x, mpibuffer, mpiGetLength(&EcdhContext_t.qa.x));
-	for(i=0;i<mpiGetLength(&EcdhContext_t.qa.x);i++)
-		printf("%02X", mpibuffer[i]);
-	printf(" ");
-	mpiWriteRaw(&EcdhContext_t.qa.y, mpibuffer, mpiGetLength(&EcdhContext_t.qa.y));
-	for(i=0;i<mpiGetLength(&EcdhContext_t.qa.y);i++)
-		printf("%02X", mpibuffer[i]);
-	printf(" ");
-	mpiWriteRaw(&EcdhContext_t.qa.z, mpibuffer, mpiGetLength(&EcdhContext_t.qa.z));
-	for(i=0;i<mpiGetLength(&EcdhContext_t.qa.z);i++)
-		printf("%02X", mpibuffer[i]);
-	printf("\r\n");
-	*/
-	
-	// calculate SHA256 of the message
-	returnCode = sha256Compute(&InputMessage, sizeof(InputMessage), MessageDigest);
-	//printf("sha256Compute return code: %X\r\n", returnCode);
-	
-	/*
-	printf("SHA256:\t"); 
-	for(i = 0; i < sizeof(MessageDigest); i++)
-		printf("%02X", MessageDigest[i]);
-	printf("\r\n");
-	*/
+   //Properly seed the PRNG
+   error = yarrowSeed(&YarrowContext_t, seed, sizeof(seed));
+   //Any error to report?
+   if(error)
+   {
+      //Debug message
+      TRACE_ERROR("Failed to seed PRNG!\r\n");
+   }
+   
+   //Load EC domain parameters
+   ecLoadDomainParameters(&params, SECP256R1_CURVE);
+	 HAL_Delay(100);
 
-	// sign digest
-	
-	returnCode = ecdsaGenerateSignature(&EcDomainParameters_t, &yarrowPrngAlgo, &YarrowContext_t, &EcdhContext_t.da, MessageDigest, sizeof(MessageDigest), &EcdsaSignature_t);
-	//printf("ecdsaGenerateSignature return code: %X\r\n", returnCode);
-	
-	// print signature
-	returnCode = ecdsaWriteSignature(&EcdsaSignature_t, signatureBuffer, &signatureLength);
-	//printf("ecdsaWriteSignature return code: %X\r\n", returnCode);
-	
-	/*
-	printf("Signature:\t");
-	for(i = 0; i< signatureLength; i++)
-		printf("%02X", signatureBuffer[i]);
-	printf("\r\n");
-	*/
-	
-	// verify signature
-	returnCode = ecdsaVerifySignature(&EcDomainParameters_t, &EcdhContext_t.qa, MessageDigest, sizeof(MessageDigest), &EcdsaSignature_t);
-	//printf("ecdsaVerifySignature return code: %X\r\n", returnCode);
-	
-	ecdsaFreeSignature(&EcdsaSignature_t);
-	//printf("ECDSA - DONE\r\n");
-	
-	while(1)
-	{}
-	
-	/* Create task */
-	xTaskCreate(Blink_Task, "BLINK_TASK", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+   //Read ECDSA private key
+   mpiReadRaw(&privateKey, buffer, 32);
+	 //TRACE_DEBUG_MPI("    ", &privateKey);
+	 printMpi(&privateKey);
+	 
+	 //Read pseudo-random number
+   mpiReadRaw(&r, prnum, 32);
+	 
+	 //Get the length, in bytes, of the random number
+   n = (mpiGetByteLength(&r) + 3) / 4 * 4;
 
-  /* Start the FreeRTOS scheduler */
-  vTaskStartScheduler();
-	
-	/* Catch error */
-  while (1)
-	{
-		Error_Handler();
-	}
+   memset(random, 0, sizeof(random));
+   memcpy(random, r.data, n);
+
+   //Initialize pseudo-random number generator
+   yarrowPrngAlgo.addEntropy(&YarrowContext_t, 0, random, n + 4, 0);
+	 
+	 printf("Initialization Done\r\n");
+	 
+		/* Catch error */
+		while (1)
+		{
+			sprintf(message, "%d", genericCounter);
+			SHA256_HASH_ALGO->compute(message, sizeof(message), digest);
+			ecdsaGenerateSignature(&params, YARROW_PRNG_ALGO, &YarrowContext_t, &privateKey, digest, SHA256_HASH_ALGO->digestSize, &signature);
+			printf("%s ", message);
+			printArray(&digest, SHA256_HASH_ALGO->digestSize);
+			printf(" ");
+			printMpi(&signature.r);
+			printMpi(&signature.s);
+			printf("\r\n");
+			
+			genericCounter++;
+			BSP_LED_Toggle(LED3);
+			HAL_Delay(500);
+		}
 }
 
-void Blink_Task(void * pvParameters)
-{
-	while(1)
-	{
-		BSP_LED_Toggle(LED3);
-		printf("Counter value: %d\r\n", genericCounter);
-		vTaskDelay(500);
-		genericCounter++;
-	}
-}
 
 /**
   * @brief  System Clock Configuration

@@ -16,15 +16,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "printf_impl.h"
+#include "printfDma.h"
 #include "errorHandler.h"
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "timers.h"
-#include "queue.h"
-#include "semphr.h"
-#include "event_groups.h"
 
 #include "ecdsa.h"
 #include "ecdh.h"

@@ -32,7 +32,7 @@
 #define USE_NO_RTOS
 
 //Desired trace level (for debugging purposes)
-#define CRYPTO_TRACE_LEVEL TRACE_LEVEL_DEBUG
+#define CRYPTO_TRACE_LEVEL TRACE_LEVEL_WARNING
 
 //Assembly optimizations for time-critical routines
 #define MPI_ASM_SUPPORT DISABLED
@@ -41,29 +41,29 @@
 #define BASE64_SUPPORT ENABLED
 
 //MD2 hash support
-#define MD2_SUPPORT DISABLED
+#define MD2_SUPPORT ENABLED
 //MD4 hash support
-#define MD4_SUPPORT DISABLED
+#define MD4_SUPPORT ENABLED
 //MD5 hash support
 #define MD5_SUPPORT ENABLED
 //RIPEMD-128 hash support
-#define RIPEMD128_SUPPORT DISABLED
+#define RIPEMD128_SUPPORT ENABLED
 //RIPEMD-160 hash support
-#define RIPEMD160_SUPPORT DISABLED
+#define RIPEMD160_SUPPORT ENABLED
 //SHA-1 hash support
-#define SHA1_SUPPORT DISABLED
+#define SHA1_SUPPORT ENABLED
 //SHA-224 hash support
-#define SHA224_SUPPORT DISABLED
+#define SHA224_SUPPORT ENABLED
 //SHA-256 hash support
 #define SHA256_SUPPORT ENABLED
 //SHA-384 hash support
-#define SHA384_SUPPORT DISABLED
+#define SHA384_SUPPORT ENABLED
 //SHA-512 hash support
-#define SHA512_SUPPORT DISABLED
+#define SHA512_SUPPORT ENABLED
 //SHA-512/224 hash support
-#define SHA512_224_SUPPORT DISABLED
+#define SHA512_224_SUPPORT ENABLED
 //SHA-512/256 hash support
-#define SHA512_256_SUPPORT DISABLED
+#define SHA512_256_SUPPORT ENABLED
 //SHA3-224 hash support
 #define SHA3_224_SUPPORT DISABLED
 //SHA3-256 hash support
@@ -75,60 +75,60 @@
 //Keccak support
 #define KECCAK_SUPPORT DISABLED
 //Tiger hash support
-#define TIGER_SUPPORT DISABLED
+#define TIGER_SUPPORT ENABLED
 //Whirlpool hash support
-#define WHIRLPOOL_SUPPORT DISABLED
+#define WHIRLPOOL_SUPPORT ENABLED
 
 //HMAC support
 #define HMAC_SUPPORT ENABLED
 
 //RC4 support
-#define RC4_SUPPORT DISABLED
+#define RC4_SUPPORT ENABLED
 //RC6 support
-#define RC6_SUPPORT DISABLED
+#define RC6_SUPPORT ENABLED
 //IDEA support
-#define IDEA_SUPPORT DISABLED
+#define IDEA_SUPPORT ENABLED
 //DES support
-#define DES_SUPPORT DISABLED
+#define DES_SUPPORT ENABLED
 //Triple DES support
-#define DES3_SUPPORT DISABLED
+#define DES3_SUPPORT ENABLED
 //AES support
 #define AES_SUPPORT ENABLED
 //Camellia support
-#define CAMELLIA_SUPPORT DISABLED
+#define CAMELLIA_SUPPORT ENABLED
 //SEED support
 #define SEED_SUPPORT ENABLED
 //ARIA support
-#define ARIA_SUPPORT DISABLED
+#define ARIA_SUPPORT ENABLED
 
 //ECB mode support
-#define ECB_SUPPORT DISABLED
+#define ECB_SUPPORT ENABLED
 //CBC mode support
-#define CBC_SUPPORT DISABLED
+#define CBC_SUPPORT ENABLED
 //CFB mode support
-#define CFB_SUPPORT DISABLED
+#define CFB_SUPPORT ENABLED
 //OFB mode support
-#define OFB_SUPPORT DISABLED
+#define OFB_SUPPORT ENABLED
 //CTR mode support
-#define CTR_SUPPORT DISABLED
+#define CTR_SUPPORT ENABLED
 //CCM mode support
-#define CCM_SUPPORT DISABLED
+#define CCM_SUPPORT ENABLED
 //GCM mode support
-#define GCM_SUPPORT DISABLED
+#define GCM_SUPPORT ENABLED
 
 //Chacha support
-#define CHACHA_SUPPORT DISABLED
+#define CHACHA_SUPPORT ENABLED
 //Poly1305 support
-#define POLY1305_SUPPORT DISABLED
+#define POLY1305_SUPPORT ENABLED
 //Chacha20Poly1305 support
-#define CHACHA20_POLY1305_SUPPORT DISABLED
+#define CHACHA20_POLY1305_SUPPORT ENABLED
 
 //Diffie-Hellman support
-#define DH_SUPPORT DISABLED
+#define DH_SUPPORT ENABLED
 //RSA support
-#define RSA_SUPPORT DISABLED
+#define RSA_SUPPORT ENABLED
 //DSA support
-#define DSA_SUPPORT DISABLED
+#define DSA_SUPPORT ENABLED
 
 //Elliptic curve cryptography support
 #define EC_SUPPORT ENABLED

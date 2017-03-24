@@ -2,7 +2,7 @@
 
 ## Concept
 
-We do believe there is a big value in IoT data, in particular when such data are related to personal information (.e.g on health or user behaviours). Such value is often "hidden" and becomes clear only after some information retrival and/or data mining algorithm and/or machine learning algorithm runs on it. 
+We do believe there is a big value in IoT data, in particular when such data are related to personal information (e.g on health or user behaviors). Such value is often "hidden" and becomes clear only after some information retrival and/or data mining algorithm and/or machine learning algorithm runs on it. 
 
 Nowadays, the extraction of useful insights from personal data is demanded to trusted third parties (see picture below). To do that, our data has to leave our private domain, and consequently we loose their control. 
 
