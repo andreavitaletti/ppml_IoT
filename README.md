@@ -40,3 +40,14 @@ Run [Keras on Jupyter over Docker](http://ermaker.github.io/blog/2015/09/09/kera
 ``docker run -d -p 8888:8888 -v '/home/andrea/Documents/papers/IoTBC/Deep Learning/notebook':/notebook -e KERAS_BACKEND=tensorflow ermaker/keras-jupyter``
 	
 ``docker run -v '/home/andrea/Documents/papers/IoTBC/Deep Learning/notebook':/notebook --rm -it ermaker/keras``
+
+
+## Distribute Private Keys to the nodes
+
+Inside PythonScript folder, the available script distributes a private (signing) key to a receiving node. Then, it parses each line of data tryin to verify the signature.
+Inside node folder, there is the project for the node. It works as follows:
+
+1- Wait to receive a private (signing) key from the serial line
+
+2- Increment a counter each second and send a message with the following format:
+	(message, digest, signature)
