@@ -14,7 +14,6 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 
 #include "at86rf2xx.h"
 #include "od.h"
@@ -22,12 +21,30 @@
 #include "net/netdev.h"
 #include "hashes/sha256.h"
 #include "uECC.h"
-
+#include "string.h"
 #include "common.h"
 
 #define MAX_LINE    (80)
 
 static uint8_t buffer[AT86RF2XX_MAX_PKT_LENGTH];
+/* use pre-generated keys for no-HWRNG platforms */
+uint8_t l_private1[] = {
+    0x9b, 0x4c, 0x4b, 0xa0, 0xb7, 0xb1, 0x25, 0x23,
+    0x9c, 0x09, 0x85, 0x4f, 0x9a, 0x21, 0xb4, 0x14,
+    0x70, 0xe0, 0xce, 0x21, 0x25, 0x00, 0xa5, 0x62,
+    0x34, 0xa4, 0x25, 0xf0, 0x0f, 0x00, 0xeb, 0xe7,
+};
+
+uint8_t l_public1[] = {
+    0x54, 0x3e, 0x98, 0xf8, 0x14, 0x55, 0x08, 0x13,
+    0xb5, 0x1a, 0x1d, 0x02, 0x02, 0xd7, 0x0e, 0xab,
+    0xa0, 0x98, 0x74, 0x61, 0x91, 0x12, 0x3d, 0x96,
+    0x50, 0xfa, 0xd5, 0x94, 0xa2, 0x86, 0xa8, 0xb0,
+    0xd0, 0x7b, 0xda, 0x36, 0xba, 0x8e, 0xd3, 0x9a,
+    0xa0, 0x16, 0x11, 0x0e, 0x1b, 0x6e, 0x81, 0x13,
+    0xd7, 0xf4, 0x23, 0xa1, 0xb2, 0x9b, 0xaf, 0xf6,
+    0x6b, 0xc4, 0x2a, 0xdf, 0xbd, 0xe4, 0x61, 0x5c,
+};
 
 typedef struct uECC_SHA256_HashContext {
     uECC_HashContext uECC;
@@ -54,7 +71,7 @@ static void _finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
     sha256_final(&context->ctx, hash_result);
 }
 
-static int send(int iface, le_uint16_t dst_pan, uint8_t *dst, size_t dst_len, char *data)
+static int send2(int iface, le_uint16_t dst_pan, uint8_t *dst, size_t dst_len, char *data)
 {
     int res;
     netdev_ieee802154_t *dev;
@@ -113,7 +130,6 @@ static int send(int iface, le_uint16_t dst_pan, uint8_t *dst, size_t dst_len, ch
     return 0;
 }
 
-
 void recv(netdev_t *dev)
 {
     /* radio vars */
@@ -121,12 +137,14 @@ void recv(netdev_t *dev)
     size_t mhr_len, data_len, src_len, dst_len;
     netdev_ieee802154_rx_info_t rx_info;
     le_uint16_t src_pan, dst_pan;
+    uint16_t i;
 
-    /* ecc vars */
+        /* ecc vars */
     const struct uECC_Curve_t *curve = uECC_secp256r1();
 
     //int curve_size = uECC_curve_private_key_size(curve);
     int public_key_size = uECC_curve_public_key_size(curve);
+    
 
     /*
     uint8_t l_secret1[curve_size];
@@ -134,32 +152,16 @@ void recv(netdev_t *dev)
     */
     
     /* reserve space for a SHA-256 hash */
-    uint8_t l_hash[32] = { 0 };
+    uint8_t l_hash[32];
     uint8_t l_sig[public_key_size];
 
     uint8_t msgBuffer[512];
     uint8_t msgSize;
-    char signReplyData[sizeof(l_sig) + sizeof(l_hash) + 1];
-
-    /* use pre-generated keys for no-HWRNG platforms */
-    uint8_t l_private1[] = {
-        0x9b, 0x4c, 0x4b, 0xa0, 0xb7, 0xb1, 0x25, 0x23,
-        0x9c, 0x09, 0x85, 0x4f, 0x9a, 0x21, 0xb4, 0x14,
-        0x70, 0xe0, 0xce, 0x21, 0x25, 0x00, 0xa5, 0x62,
-        0x34, 0xa4, 0x25, 0xf0, 0x0f, 0x00, 0xeb, 0xe7,
-    };
-    uint8_t l_public1[] = {
-        0x54, 0x3e, 0x98, 0xf8, 0x14, 0x55, 0x08, 0x13,
-        0xb5, 0x1a, 0x1d, 0x02, 0x02, 0xd7, 0x0e, 0xab,
-        0xa0, 0x98, 0x74, 0x61, 0x91, 0x12, 0x3d, 0x96,
-        0x50, 0xfa, 0xd5, 0x94, 0xa2, 0x86, 0xa8, 0xb0,
-        0xd0, 0x7b, 0xda, 0x36, 0xba, 0x8e, 0xd3, 0x9a,
-        0xa0, 0x16, 0x11, 0x0e, 0x1b, 0x6e, 0x81, 0x13,
-        0xd7, 0xf4, 0x23, 0xa1, 0xb2, 0x9b, 0xaf, 0xf6,
-        0x6b, 0xc4, 0x2a, 0xdf, 0xbd, 0xe4, 0x61, 0x5c,
-    };
+    char signReplyData[1 + sizeof(l_sig) + sizeof(l_hash) + 1];
 
     uint8_t tmp[2 * SHA256_DIGEST_LENGTH + SHA256_INTERNAL_BLOCK_SIZE];
+
+
 
     putchar('\n');
     data_len = dev->driver->recv(dev, buffer, sizeof(buffer), &rx_info);
@@ -241,32 +243,57 @@ void recv(netdev_t *dev)
             msgSize = data_len - mhr_len - 1;
             memcpy(msgBuffer, &buffer[mhr_len + 1], msgSize);
 
+            printf("MSG 0xFF: ");
+            for(i=0;i<msgSize;i++)
+                printf("%02X ", msgBuffer[i]);
+            printf("\n");
+
             /* copy some bogus data into the hash */
             //memcpy(l_hash, l_public1, 32);
 
             /* calculate hash */
+            printf("HASH calc\n");
             _init_sha256(&ctx.uECC);
             _update_sha256(&ctx.uECC, msgBuffer, msgSize);
             _finish_sha256(&ctx.uECC, l_hash);
+            printf("DONE\n");
+
+            memcpy(l_hash, l_public1, 32);
 
             /* sign it */
+            printf("Sign deterministic\n");
             if (uECC_sign_deterministic(l_private1, l_hash, sizeof(l_hash), &ctx.uECC, l_sig, curve) != 1)
                 printf("\nSignature generated\n");
 
-            memcpy(signReplyData, l_sig, sizeof(l_sig));
-            memcpy(&signReplyData[sizeof(l_sig)], l_hash, sizeof(l_hash));
+            printf("DONE\n");
+            printf("Make packet");
+            signReplyData[0] = 0xFE;
+            memcpy(&signReplyData[1], l_sig, sizeof(l_sig));
+            memcpy(&signReplyData[sizeof(l_sig) + 1], l_hash, sizeof(l_hash));
             signReplyData[sizeof(l_sig) + sizeof(l_hash)] = 0;
+            printf("DONE\n");
 
+            printf("Sending sign and hash\n");
             /* send the sign and hash*/
-            send(0, src_pan, src, src_len, signReplyData);
+            send2(0, src_pan, src, src_len, signReplyData);
+            printf("DONE\n");
             break;
 
         /* sign received */
         case 0xFE:
+            printf("saving signature and hash to array\n");
             /* save signature in array */
             memcpy(l_sig, &buffer[mhr_len + 1], sizeof(l_sig));
             /* save hash in array */
             memcpy(l_hash, &buffer[mhr_len + sizeof(l_sig) + 1], sizeof(l_hash));
+            printf("DONE\n");
+
+            printf("MSG 0xFE: ");
+            for(i=0;i<sizeof(l_sig)+sizeof(l_hash);i++)
+                printf("%02X ", buffer[i]);
+            printf("\n");
+
+            printf("Verify\n");
 
             /* verify */
             if (uECC_verify(l_public1, l_hash, sizeof(l_hash), l_sig, curve) != 1) {
@@ -276,6 +303,7 @@ void recv(netdev_t *dev)
             {
                 printf("\nSignature verification OK\n");
             }
+            printf("DONE\n");
             break;
 
         default:
@@ -283,7 +311,7 @@ void recv(netdev_t *dev)
             break;
     }
 
-    printf("txt: ");
+    printf("Text: ");
     for (int i = mhr_len; i < data_len; i++) {
         if ((buffer[i] > 0x1F) && (buffer[i] < 0x80)) {
             putchar((char)buffer[i]);
@@ -299,5 +327,3 @@ void recv(netdev_t *dev)
     printf("\n");
     printf("RSSI: %u, LQI: %u\n\n", rx_info.rssi, rx_info.lqi);
 }
-
-/** @} */
