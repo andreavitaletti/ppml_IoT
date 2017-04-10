@@ -31,8 +31,6 @@
 #define _STACKSIZE      (THREAD_STACKSIZE_DEFAULT + THREAD_EXTRA_STACKSIZE_PRINTF)
 #define MSG_TYPE_ISR    (0x3456)
 
-extern int txtreqsign(int argc, char **argv);
-
 static char stack[_STACKSIZE * 16];
 static kernel_pid_t _recv_pid;
 

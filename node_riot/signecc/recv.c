@@ -24,7 +24,7 @@
 #include "string.h"
 #include "common.h"
 
-#define MAX_LINE    (80)
+#define MAX_LINE    (128)
 
 static uint8_t buffer[AT86RF2XX_MAX_PKT_LENGTH];
 /* use pre-generated keys for no-HWRNG platforms */
@@ -71,7 +71,7 @@ static void _finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
     sha256_final(&context->ctx, hash_result);
 }
 
-static int send2(int iface, le_uint16_t dst_pan, uint8_t *dst, size_t dst_len, char *data)
+static int send2(int iface, le_uint16_t dst_pan, uint8_t *dst, size_t dst_len, char *data, uint8_t dataLength)
 {
     int res;
     netdev_ieee802154_t *dev;
@@ -92,7 +92,7 @@ static int send2(int iface, le_uint16_t dst_pan, uint8_t *dst, size_t dst_len, c
     flags = (uint8_t)(dev->flags & NETDEV_IEEE802154_SEND_MASK);
     flags |= IEEE802154_FCF_TYPE_DATA;
     vector[1].iov_base = data;
-    vector[1].iov_len = strlen(data);
+    vector[1].iov_len = dataLength;
     src_pan = byteorder_btols(byteorder_htons(dev->pan));
     if (dst_pan.u16 == 0) {
         dst_pan = src_pan;
@@ -264,18 +264,26 @@ void recv(netdev_t *dev)
             printf("Sign deterministic\n");
             if (uECC_sign_deterministic(l_private1, l_hash, sizeof(l_hash), &ctx.uECC, l_sig, curve) != 1)
                 printf("\nSignature generated\n");
-
             printf("DONE\n");
-            printf("Make packet");
+
+            printf("Make packet\n");
             signReplyData[0] = 0xFE;
             memcpy(&signReplyData[1], l_sig, sizeof(l_sig));
+            printf("Generated signature: ");
+            for(i=0;i<sizeof(l_sig);i++)
+                printf("%02X ", l_sig[i]);
+            printf("\n");
             memcpy(&signReplyData[sizeof(l_sig) + 1], l_hash, sizeof(l_hash));
-            signReplyData[sizeof(l_sig) + sizeof(l_hash)] = 0;
+            printf("Calculated hash: ");
+            for(i=0;i<sizeof(l_hash);i++)
+                printf("%02X ", l_hash[i]);
+            printf("\n");
+            signReplyData[sizeof(l_sig) + sizeof(l_hash) + 1] = 0;
             printf("DONE\n");
 
-            printf("Sending sign and hash\n");
             /* send the sign and hash*/
-            send2(0, src_pan, src, src_len, signReplyData);
+            printf("Sending sign and hash\n");
+            send2(0, src_pan, src, src_len, signReplyData, 2 + sizeof(l_sig) + sizeof(l_hash));
             printf("DONE\n");
             break;
 
@@ -286,10 +294,19 @@ void recv(netdev_t *dev)
             memcpy(l_sig, &buffer[mhr_len + 1], sizeof(l_sig));
             /* save hash in array */
             memcpy(l_hash, &buffer[mhr_len + sizeof(l_sig) + 1], sizeof(l_hash));
+
+            printf("Received signature: ");
+            for(i=0;i<sizeof(l_sig);i++)
+                printf("%02X ", l_sig[i]);
+            printf("\n");
+            printf("Received hash: ");
+            for(i=0;i<sizeof(l_hash);i++)
+                printf("%02X ", l_hash[i]);
+            printf("\n");
             printf("DONE\n");
 
             printf("MSG 0xFE: ");
-            for(i=0;i<sizeof(l_sig)+sizeof(l_hash);i++)
+            for(i=0;i<sizeof(l_sig)+sizeof(l_hash)+2;i++)
                 printf("%02X ", buffer[i]);
             printf("\n");
 
