@@ -153,7 +153,7 @@ int main(void)
     uint8_t l_hash[32];
     uint8_t l_sig[public_key_size];
 
-    int msgBuffer[14];
+    int msgBuffer[15];
 
     uint8_t tmp[2 * SHA256_DIGEST_LENGTH + SHA256_INTERNAL_BLOCK_SIZE];
 
@@ -264,16 +264,17 @@ int main(void)
         msgBuffer[1] = acc_value.y_axis;
         msgBuffer[2] = acc_value.z_axis;
         msgBuffer[3] = temp_value;
-        msgBuffer[4] = mag_value.y_axis;
-        msgBuffer[5] = mag_value.z_axis;
-        msgBuffer[6] = pres_abs;
-        msgBuffer[7] = pres;
-        msgBuffer[8] = temp_abs;
-        msgBuffer[9] = temp;
-        msgBuffer[10] = acc_data.acc_x;
-        msgBuffer[11] = acc_data.acc_y;
-        msgBuffer[12] = acc_data.acc_z;
-        msgBuffer[13] = value;
+        msgBuffer[4] = mag_value.x_axis;
+        msgBuffer[5] = mag_value.y_axis;
+        msgBuffer[6] = mag_value.z_axis;
+        msgBuffer[7] = pres_abs;
+        msgBuffer[8] = pres;
+        msgBuffer[9] = temp_abs;
+        msgBuffer[10] = temp;
+        msgBuffer[11] = acc_data.acc_x;
+        msgBuffer[12] = acc_data.acc_y;
+        msgBuffer[13] = acc_data.acc_z;
+        msgBuffer[14] = value;
 
         /* calculate hash */
         printf("Calculating hash... ");
