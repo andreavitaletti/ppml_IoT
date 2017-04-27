@@ -1,8 +1,14 @@
 APPLICATION = signecc
 
+BOARD ?= native
+RIOTBASE ?= $(CURDIR)/../..
+QUIET ?= 1
+APPLICATION := tests_$(APPLICATION)
+
 BOARD ?= iotlab-m3
 
-RIOTBASE ?= $(CURDIR)/../..
+# exclude boards with insufficient memory
+BOARD_INSUFFICIENT_MEMORY := nucleo32-f031
 
 FEATURES_REQUIRED = periph_spi periph_gpio
 
@@ -13,7 +19,6 @@ USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
 USEMODULE += hashes
-
 USEPKG += micro-ecc
 
 # define the driver to be used for selected boards

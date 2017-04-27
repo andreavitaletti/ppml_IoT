@@ -139,22 +139,6 @@ int ifconfig(int argc, char **argv)
     return 0;
 }
 
-static inline int _dehex(char c, int default_)
-{
-    if ('0' <= c && c <= '9') {
-        return c - '0';
-    }
-    else if ('A' <= c && c <= 'F') {
-        return c - 'A' + 10;
-    }
-    else if ('a' <= c && c <= 'f') {
-        return c - 'a' + 10;
-    }
-    else {
-        return default_;
-    }
-}
-
 static void txtreqsign_usage(char *cmd_name)
 {
     printf("usage: %s <iface> [<pan>] <addr> <text>\n", cmd_name);
@@ -238,6 +222,22 @@ int txtsnd(int argc, char **argv)
     return send(iface, pan, addr, (size_t)res, dataBuffer);
 }
 
+static inline int _dehex(char c, int default_)
+{
+    if ('0' <= c && c <= '9') {
+        return c - '0';
+    }
+    else if ('A' <= c && c <= 'F') {
+        return c - 'A' + 10;
+    }
+    else if ('a' <= c && c <= 'f') {
+        return c - 'a' + 10;
+    }
+    else {
+        return default_;
+    }
+}
+
 static int _parse_addr(uint8_t *out, size_t out_len, const char *in)
 {
     const char *end_str = in;
@@ -288,7 +288,8 @@ static int _parse_addr(uint8_t *out, size_t out_len, const char *in)
     return count;
 }
 
-static int send(int iface, le_uint16_t dst_pan, uint8_t *dst, size_t dst_len, char *data)
+static int send(int iface, le_uint16_t dst_pan, uint8_t *dst, size_t dst_len,
+                char *data)
 {
     int res;
     netdev_ieee802154_t *dev;
